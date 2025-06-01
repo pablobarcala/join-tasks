@@ -1,4 +1,4 @@
-# Mi App Fullstack
+# Join Tasks Fullstack
 
 ## Cómo iniciar el proyecto
 
