@@ -75,6 +75,7 @@ export default function ListDetail() {
                   key={task._id} 
                   task={task} 
                   onToggle={() => toggleTask(task._id)}
+                  listId={currentList._id}
                 />
               ))}
               {tasks.length === 0 && (

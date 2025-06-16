@@ -1,168 +1,185 @@
 "use client"
 
+import { useModal } from '@/hooks/useModal';
+import { useAuthStore } from '@/store/authStore';
+import { useTasksStore } from '@/store/tasksStore';
 import { useState } from 'react';
+import DeleteConfirmationModal from './DeleteConfirmationModal';
+import EditTaskModal from './EditTaskModal';
 
-export default function TaskCard({ task, onToggle }) {
+export default function TaskCard({ listId, task, onToggle }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const { user } = useAuthStore();
+  const { updateTask, deleteTask } = useTasksStore()
 
-  const formatDate = (dateString) => {
-    if (!dateString) return null;
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = date.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const editModal = useModal(false)
+  const deleteModal = useModal(false)
 
-    if (diffDays < 0) {
-      return { text: `Vencida hace ${Math.abs(diffDays)} día${Math.abs(diffDays) !== 1 ? 's' : ''}`, isOverdue: true };
-    } else if (diffDays === 0) {
-      return { text: 'Vence hoy', isToday: true };
-    } else if (diffDays === 1) {
-      return { text: 'Vence mañana', isTomorrow: true };
-    } else if (diffDays <= 7) {
-      return { text: `Vence en ${diffDays} días`, isThisWeek: true };
-    } else {
-      return { text: date.toLocaleDateString('es-ES'), isNormal: true };
+  const isOwner = task.createdBy._id === user._id
+
+  const handleEditTask = async (taskData) => {
+    try {
+      await updateTask(listId, task._id, taskData);
+      editModal.close();
+    } catch (error) {
+      console.error('Error updating task:', error);
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'alta':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'media':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'baja':
-        return 'bg-green-100 text-green-800 border-green-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const handleDeleteTask = async () => {
+    try {
+      await deleteTask(task._id);
+    } catch (error) {
+      console.error('Error deleting task:', error);
     }
   };
 
-  const getPriorityIcon = (priority) => {
-    switch (priority) {
-      case 'alta':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'media':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-          </svg>
-        );
-      case 'baja':
-        return (
-          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-        );
-      default:
-        return null;
-    }
+  const stopPropagation = (e) => {
+    e.stopPropagation();
   };
-
-  const dueDateInfo = task.dueDate ? formatDate(task.dueDate) : null;
 
   return (
-    <div
-      className={`
-        bg-white rounded-lg border transition-all duration-200 hover:shadow-md
-        ${task.completed ? 'opacity-75 bg-gray-50' : 'shadow-sm'}
-        ${isHovered ? 'border-blue-300' : 'border-gray-200'}
-      `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="p-4">
-        <div className="flex items-start space-x-3">
-          {/* Checkbox */}
-          <button
-            onClick={onToggle}
-            className={`
-              mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
-              ${task.completed 
-                ? 'bg-blue-600 border-blue-600 text-white' 
-                : 'border-gray-300 hover:border-blue-500'
-              }
-            `}
-          >
-            {task.completed && (
-              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            )}
-          </button>
-
-          {/* Contenido principal */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h3 className={`
-                  text-lg font-medium text-gray-900
-                  ${task.completed ? 'line-through text-gray-500' : ''}
-                `}>
-                  {task.title}
-                </h3>
-                
-                {task.description && (
-                  <p className={`
-                    mt-1 text-sm text-gray-600
-                    ${task.completed ? 'line-through text-gray-400' : ''}
-                  `}>
-                    {task.description}
-                  </p>
-                )}
-              </div>
-
-              {/* Prioridad */}
-              {task.priority && task.priority !== 'ninguna' && (
-                <div className={`
-                  ml-3 px-2 py-1 rounded-full text-xs font-medium border flex items-center space-x-1
-                  ${getPriorityColor(task.priority)}
-                `}>
-                  {getPriorityIcon(task.priority)}
-                  <span className="capitalize">{task.priority}</span>
+    <>
+      <div
+        className={`relative
+          bg-white rounded-lg border transition-all duration-200 hover:shadow-md
+          ${task.completed ? 'opacity-75 bg-gray-50' : 'shadow-sm'}
+          ${isHovered ? 'border-blue-300' : 'border-gray-200'}
+        `}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className='absolute top-4 right-4' onClick={stopPropagation}>
+              <button
+                onClick={() => setShowDropdown(!showDropdown)}
+                className={`p-1 rounded-full hover:bg-gray-100 opacity-0 
+                  ${isHovered ? 'opacity-100 transition-opacity' : ''}
+                `}
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01" />
+                </svg>
+              </button>
+              {showDropdown && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                  <div className="py-1">
+                    {isOwner && (
+                      <>
+                        <button
+                          onClick={() => {
+                            editModal.open();
+                            setShowDropdown(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Editar
+                        </button>
+                        <hr className="my-1" />
+                        <button
+                          onClick={() => {
+                            deleteModal.open();
+                            setShowDropdown(false);
+                          }}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Eliminar
+                        </button>
+                      </>
+                    )}
+                    {!isOwner && (
+                      <div className="px-4 py-2 text-sm text-gray-500">
+                        Lista compartida
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+            {/* Checkbox */}
+            <button
+              onClick={onToggle}
+              className={`
+                mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors
+                ${task.completed 
+                  ? 'bg-blue-600 border-blue-600 text-white' 
+                  : 'border-gray-300 hover:border-blue-500'
+                }
+              `}
+            >
+              {task.completed && (
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              )}
+            </button>
 
-            {/* Fecha de vencimiento */}
-            {dueDateInfo && (
-              <div className="mt-3">
-                <span className={`
-                  inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                  ${dueDateInfo.isOverdue ? 'bg-red-100 text-red-800' : ''}
-                  ${dueDateInfo.isToday ? 'bg-orange-100 text-orange-800' : ''}
-                  ${dueDateInfo.isTomorrow ? 'bg-yellow-100 text-yellow-800' : ''}
-                  ${dueDateInfo.isThisWeek ? 'bg-blue-100 text-blue-800' : ''}
-                  ${dueDateInfo.isNormal ? 'bg-gray-100 text-gray-800' : ''}
-                `}>
-                  <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                  </svg>
-                  {dueDateInfo.text}
-                </span>
-              </div>
-            )}
-
-            {/* Asignado a */}
-            {task.assignedTo && (
-              <div className="mt-2 flex items-center space-x-2">
-                <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-white">
-                    {task.assignedTo.name.charAt(0).toUpperCase()}
-                  </span>
+            {/* Contenido principal */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className={`
+                    text-lg font-medium text-gray-900
+                    ${task.completed ? 'line-through text-gray-500' : ''}
+                  `}>
+                    {task.title}
+                  </h3>
+                  
+                  {task.description && (
+                    <p className={`
+                      mt-1 text-sm text-gray-600
+                      ${task.completed ? 'line-through text-gray-400' : ''}
+                    `}>
+                      {task.description}
+                    </p>
+                  )}
                 </div>
-                <span className="text-sm text-gray-600">
-                  Asignado a {task.assignedTo.name}
-                </span>
               </div>
-            )}
+
+              {/* Tags */}
+              {task.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {task.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
+        
       </div>
-    </div>
+
+      {/* Modales */}
+      {editModal.isOpen && (
+        <EditTaskModal 
+          task={task}
+          onSubmit={handleEditTask}
+          onClose={() => editModal.close()}
+        />
+      )}
+
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onConfirm={handleDeleteTask}
+        onClose={() => deleteModal.close()}
+        title="Eliminar Tarea"
+        message={`¿Estás seguro de que quieres eliminar la tarea "${task.title}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar Tarea"
+      />
+    </>
   );
 }

@@ -6,20 +6,20 @@ export default function CreateListModal({ onSubmit, onClose }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    color: '#3B82F6' // Azul por defecto
+    // color: '#3B82F6' // Azul por defecto
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const colors = [
-    { name: 'Azul', value: '#3B82F6' },
-    { name: 'Verde', value: '#10B981' },
-    { name: 'Morado', value: '#8B5CF6' },
-    { name: 'Rosa', value: '#EC4899' },
-    { name: 'Naranja', value: '#F59E0B' },
-    { name: 'Rojo', value: '#EF4444' },
-    { name: 'Gris', value: '#6B7280' },
-    { name: 'Índigo', value: '#6366F1' }
-  ];
+  // const colors = [
+  //   { name: 'Azul', value: '#3B82F6' },
+  //   { name: 'Verde', value: '#10B981' },
+  //   { name: 'Morado', value: '#8B5CF6' },
+  //   { name: 'Rosa', value: '#EC4899' },
+  //   { name: 'Naranja', value: '#F59E0B' },
+  //   { name: 'Rojo', value: '#EF4444' },
+  //   { name: 'Gris', value: '#6B7280' },
+  //   { name: 'Índigo', value: '#6366F1' }
+  // ];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -42,7 +42,7 @@ export default function CreateListModal({ onSubmit, onClose }) {
       await onSubmit({
         name: formData.name.trim(),
         description: formData.description.trim(),
-        color: formData.color
+        // color: formData.color
       });
     } catch (error) {
       console.error('Error al crear la lista:', error);
@@ -126,7 +126,7 @@ export default function CreateListModal({ onSubmit, onClose }) {
             </div>
 
             {/* Color */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Color de la lista
               </label>
@@ -155,7 +155,7 @@ export default function CreateListModal({ onSubmit, onClose }) {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Botones */}
             <div className="flex justify-end space-x-3 pt-4">

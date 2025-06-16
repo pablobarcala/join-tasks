@@ -1,102 +1,82 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
-export default function EditListModal({ list, onSubmit, onClose }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: ''
-  });
+export default function DeleteConfirmationModal({ 
+  isOpen, 
+  onConfirm, 
+  onClose, 
+  title = "Confirmar eliminación",
+  message = "¿Estás seguro de que quieres eliminar este elemento?",
+  confirmText = "Eliminar",
+  cancelText = "Cancelar",
+  type = "danger" // danger, warning
+}) {
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (list) {
-      setFormData({
-        name: list.name || '',
-        description: list.description || ''
-      });
-    }
-  }, [list]);
+  if (!isOpen) return null;
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.name.trim()) return;
-
+  const handleConfirm = async () => {
     setIsLoading(true);
     try {
-      await onSubmit(formData);
+      await onConfirm();
+      onClose();
     } catch (error) {
-      console.error('Error updating list:', error);
+      console.error('Error in confirmation:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
+  const confirmButtonClass = type === 'danger' 
+    ? 'bg-red-600 hover:bg-red-700 text-white' 
+    : 'bg-orange-600 hover:bg-orange-700 text-white';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg w-full max-w-md">
         <div className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Editar Lista</h2>
+          <div className="flex items-center mb-4">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center mr-3 ${
+              type === 'danger' ? 'bg-red-100' : 'bg-orange-100'
+            }`}>
+              <svg 
+                className={`w-6 h-6 ${type === 'danger' ? 'text-red-600' : 'text-orange-600'}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" 
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ej: Lista de compras"
-                required
-                autoFocus
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Descripción
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Descripción opcional..."
-                rows="3"
-              />
-            </div>
-            
-            <div className="flex gap-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
-                disabled={isLoading}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50"
-                disabled={isLoading || !formData.name.trim()}
-              >
-                {isLoading ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-            </div>
-          </form>
+          <p className="text-gray-600 mb-6">{message}</p>
+          
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+              disabled={isLoading}
+            >
+              {cancelText}
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirm}
+              className={`flex-1 px-4 py-2 rounded-md transition-colors disabled:opacity-50 ${confirmButtonClass}`}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Eliminando...' : confirmText}
+            </button>
+          </div>
         </div>
       </div>
     </div>

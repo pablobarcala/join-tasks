@@ -1,21 +1,41 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-export default function CreateTaskModal({ onSubmit, onClose, listId }) {
+export default function EditTaskModal({ task, onSubmit, onClose }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    tags: []
+    tags: [],
+    completed: false
   });
   const [tagInput, setTagInput] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inicializar el formulario con los datos de la tarea
+  useEffect(() => {
+    if (task) {
+      setFormData({
+        title: task.title || '',
+        description: task.description || '',
+        tags: task.tags || [],
+        completed: task.completed || false
+      });
+    }
+  }, [task]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleCompletedChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      completed: e.target.checked
     }));
   };
 
@@ -59,14 +79,13 @@ export default function CreateTaskModal({ onSubmit, onClose, listId }) {
       const taskData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
-        listId: listId,
         tags: formData.tags,
-        completed: false
+        completed: formData.completed
       };
 
       await onSubmit(taskData);
     } catch (error) {
-      console.error('Error al crear la tarea:', error);
+      console.error('Error al actualizar la tarea:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -78,6 +97,8 @@ export default function CreateTaskModal({ onSubmit, onClose, listId }) {
     }
   };
 
+  if (!task) return null;
+
   return (
     <div 
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -88,7 +109,7 @@ export default function CreateTaskModal({ onSubmit, onClose, listId }) {
           {/* Header */}
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
-              Crear Nueva Tarea
+              Editar Tarea
             </h2>
             <button
               onClick={onClose}
@@ -103,6 +124,21 @@ export default function CreateTaskModal({ onSubmit, onClose, listId }) {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Estado de completado */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="completed"
+                checked={formData.completed}
+                onChange={handleCompletedChange}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                disabled={isSubmitting}
+              />
+              <label htmlFor="completed" className="ml-2 block text-sm text-gray-900">
+                Marcar como completada
+              </label>
+            </div>
+
             {/* Título */}
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -222,10 +258,10 @@ export default function CreateTaskModal({ onSubmit, onClose, listId }) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span>Creando...</span>
+                    <span>Actualizando...</span>
                   </>
                 ) : (
-                  <span>Crear Tarea</span>
+                  <span>Actualizar Tarea</span>
                 )}
               </button>
             </div>

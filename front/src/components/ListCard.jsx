@@ -5,6 +5,7 @@ import { useListsStore } from '@/store/listsStore';
 import EditListModal from './EditListModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 import ShareListModal from './ShareListModal';
+import { useModal } from '@/hooks/useModal';
 
 export default function ListCard({ list }) {
   const router = useRouter();
@@ -12,9 +13,9 @@ export default function ListCard({ list }) {
   const { updateList, deleteList, shareList } = useListsStore();
   
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const editModal = useModal(false)
+  const deleteModal = useModal(false)
+  const shareModal = useModal(false)
 
   // Verificar si el usuario actual es el owner
   const isOwner = list.owner?._id === user?._id || list.owner === user?._id;
@@ -26,7 +27,7 @@ export default function ListCard({ list }) {
   const handleEditList = async (listData) => {
     try {
       await updateList(list._id, listData);
-      setShowEditModal(false);
+      editModal.close();
     } catch (error) {
       console.error('Error updating list:', error);
     }
@@ -43,7 +44,7 @@ export default function ListCard({ list }) {
   const handleShareList = async (email) => {
     try {
       await shareList(list._id, email);
-      setShowShareModal(false);
+      shareModal.close();
     } catch (error) {
       console.error('Error sharing list:', error);
       throw error;
@@ -78,7 +79,7 @@ export default function ListCard({ list }) {
                   <>
                     <button
                       onClick={() => {
-                        setShowEditModal(true);
+                        editModal.open();
                         setShowDropdown(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -90,7 +91,7 @@ export default function ListCard({ list }) {
                     </button>
                     <button
                       onClick={() => {
-                        setShowShareModal(true);
+                        shareModal.open();
                         setShowDropdown(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -103,7 +104,7 @@ export default function ListCard({ list }) {
                     <hr className="my-1" />
                     <button
                       onClick={() => {
-                        setShowDeleteModal(true);
+                        deleteModal.open();
                         setShowDropdown(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
@@ -159,28 +160,28 @@ export default function ListCard({ list }) {
       </div>
 
       {/* Modales */}
-      {showEditModal && (
+      {editModal.isOpen && (
         <EditListModal
           list={list}
           onSubmit={handleEditList}
-          onClose={() => setShowEditModal(false)}
+          onClose={() => editModal.close()}
         />
       )}
 
-      {/* <DeleteConfirmationModal
-        isOpen={showDeleteModal}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
         onConfirm={handleDeleteList}
-        onClose={() => setShowDeleteModal(false)}
+        onClose={() => deleteModal.close()}
         title="Eliminar Lista"
         message={`¿Estás seguro de que quieres eliminar la lista "${list.name}"? Esta acción no se puede deshacer.`}
         confirmText="Eliminar Lista"
-      /> */}
+      />
 
-      {showShareModal && (
+      {shareModal.isOpen && (
         <ShareListModal
           list={list}
           onSubmit={handleShareList}
-          onClose={() => setShowShareModal(false)}
+          onClose={() => shareModal.close()}
         />
       )}
     </>
