@@ -5,14 +5,23 @@ const listSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    owner: {
+    description: {
         type: String,
-        required: true
+        default: ''
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+    },
+    sharedWith: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }]
 })
+
+listSchema.methods.hasAccess = function(userId) {
+    return this.owner.toString() === userId.toString() || this.sharedWith.includes(userId)
+}
 
 module.exports = mongoose.model('List', listSchema)

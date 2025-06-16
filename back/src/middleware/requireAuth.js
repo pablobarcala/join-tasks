@@ -1,18 +1,22 @@
-// src/middleware/requireAuth.js
+// middleware/auth.js
 const jwt = require('jsonwebtoken');
 
-module.exports = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (!authHeader) return res.status(401).json({ message: 'Token faltante' });
-
-  const token = authHeader.split(' ')[1];
-
+const auth = (req, res, next) => {
   try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ message: 'Token no proporcionado' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.userId;
+    req.userName = decoded.name;
+    
     next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Token inválido' });
+  } catch (error) {
+    res.status(401).json({ message: 'Token inválido' });
   }
 };
+
+module.exports = auth;

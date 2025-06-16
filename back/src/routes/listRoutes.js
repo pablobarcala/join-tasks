@@ -2,16 +2,15 @@
 const express = require('express');
 const router = express.Router();
 const listController = require('../controllers/listController');
-
-// Middleware de autenticación (a definir)
-const requireAuth = require('../middleware/requireAuth');
+const auth = require('../middleware/requireAuth')
 
 // Proteger rutas con autenticación
-router.use(requireAuth);
+router.use(auth);
 
-router.post('/lists', listController.createList);
-router.get('/lists', listController.getLists);
-router.put('/lists/:id', listController.updateList);
-router.delete('/lists/:id', listController.deleteList);
+router.get('/', listController.getLists);
+router.post('/', listController.createList);
+router.put('/:id', listController.updateList);
+router.delete('/:id', listController.deleteList);
+router.post('/:id/share', listController.shareList);
 
 module.exports = router;

@@ -1,59 +1,115 @@
-// src/controllers/taskController.js
 const Task = require('../models/Task');
+const List = require('../models/List');
 
-exports.createTask = async (req, res) => {
+exports.getTasks = async (req, res) => {
   try {
-    const { title, description, dueDate, listId } = req.body;
-    const owner = req.userId;
-
-    if (!title || !listId) {
-      return res.status(400).json({ message: "Título y lista requeridos" });
+    const { listId } = req.params;
+    
+    // Verificar que el usuario tenga acceso a la lista
+    const list = await List.findById(listId);
+    if (!list) {
+      return res.status(404).json({ message: 'Lista no encontrada' });
     }
 
-    const task = new Task({ title, description, dueDate, listId, owner });
-    await task.save();
+    if (!list.hasAccess(req.userId)) {
+      return res.status(403).json({ message: 'No tienes acceso a esta lista' });
+    }
 
-    res.status(201).json(task);
+    const tasks = await Task.find({ listId })
+      .populate('createdBy', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json(tasks);
   } catch (err) {
-    res.status(500).json({ message: "Error al crear la tarea" });
+    console.error('Error al obtener tareas:', err);
+    res.status(500).json({ message: 'Error al obtener tareas' });
   }
 };
 
-exports.getTasksByList = async (req, res) => {
+exports.createTask = async (req, res) => {
   try {
     const { listId } = req.params;
-    const owner = req.userId;
+    const { title, description, tags } = req.body;
+    
+    if (!title) {
+      return res.status(400).json({ message: 'El título es obligatorio' });
+    }
 
-    const tasks = await Task.find({ listId, owner });
-    res.json(tasks);
+    // Verificar acceso a la lista
+    const list = await List.findById(listId);
+    if (!list) {
+      return res.status(404).json({ message: 'Lista no encontrada' });
+    }
+
+    if (!list.hasAccess(req.userId)) {
+      return res.status(403).json({ message: 'No tienes acceso a esta lista' });
+    }
+
+    const task = new Task({
+      title,
+      description: description || '',
+      listId,
+      createdBy: req.userId,
+      tags: tags || []
+    });
+
+    await task.save();
+    await task.populate('createdBy', 'name email');
+    
+    res.status(201).json(task);
   } catch (err) {
-    res.status(500).json({ message: "Error al obtener tareas" });
+    console.error('Error al crear tarea:', err);
+    res.status(500).json({ message: 'Error al crear tarea' });
   }
 };
 
 exports.updateTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const updates = req.body;
+    const { title, description, completed, tags } = req.body;
+    
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Tarea no encontrada' });
+    }
 
-    const task = await Task.findByIdAndUpdate(id, updates, { new: true });
+    // Verificar acceso a la lista
+    const list = await List.findById(task.listId);
+    if (!list.hasAccess(req.userId)) {
+      return res.status(403).json({ message: 'No tienes acceso a esta tarea' });
+    }
 
-    if (!task) return res.status(404).json({ message: "Tarea no encontrada" });
-
+    task.title = title !== undefined ? title : task.title;
+    task.description = description !== undefined ? description : task.description;
+    task.completed = completed !== undefined ? completed : task.completed;
+    task.tags = tags !== undefined ? tags : task.tags;
+    
+    await task.save();
+    await task.populate('createdBy', 'name email');
+    
     res.json(task);
   } catch (err) {
-    res.status(500).json({ message: "Error al actualizar la tarea" });
+    console.error('Error al actualizar tarea:', err);
+    res.status(500).json({ message: 'Error al actualizar tarea' });
   }
 };
 
 exports.deleteTask = async (req, res) => {
   try {
-    const { id } = req.params;
-    const deleted = await Task.findByIdAndDelete(id);
-    if (!deleted) return res.status(404).json({ message: "Tarea no encontrada" });
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({ message: 'Tarea no encontrada' });
+    }
 
-    res.json({ message: "Tarea eliminada" });
+    // Verificar acceso a la lista
+    const list = await List.findById(task.listId);
+    if (!list.hasAccess(req.userId)) {
+      return res.status(403).json({ message: 'No tienes acceso a esta tarea' });
+    }
+
+    await Task.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Tarea eliminada correctamente' });
   } catch (err) {
-    res.status(500).json({ message: "Error al eliminar la tarea" });
+    console.error('Error al eliminar tarea:', err);
+    res.status(500).json({ message: 'Error al eliminar tarea' });
   }
 };
