@@ -12,7 +12,7 @@ export const useAuthStore = create()(
 
                 // Cargar perfil de usuario
                 loadUser: async () => {
-                    const token = api.getToken();
+                    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
                     if (!token) {
                         set({ loading: false });
                         return;
@@ -69,7 +69,9 @@ export const useAuthStore = create()(
 
                 // Logout
                 logout: () => {
-                    api.clearToken();
+                    if (typeof window !== 'undefined') {
+                        localStorage.removeItem('token');
+                    }
                     set({ 
                         user: null, 
                         isAuthenticated: false 

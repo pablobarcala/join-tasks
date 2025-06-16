@@ -16,7 +16,7 @@ export default function TaskCard({ listId, task, onToggle }) {
   const editModal = useModal(false)
   const deleteModal = useModal(false)
 
-  const isOwner = task.createdBy._id === user._id
+  const isOwner = task.createdBy === user._id
 
   const handleEditTask = async (taskData) => {
     try {
@@ -29,7 +29,7 @@ export default function TaskCard({ listId, task, onToggle }) {
 
   const handleDeleteTask = async () => {
     try {
-      await deleteTask(task._id);
+      await deleteTask(listId, task._id);
     } catch (error) {
       console.error('Error deleting task:', error);
     }

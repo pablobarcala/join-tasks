@@ -2,7 +2,7 @@
   "name": "join-tasks-fullstack",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix front\" \"npm run dev --prefix back\""
+    "dev": "concurrently -k -n FRONT,AUTH,TASK,LIST -c cyan,green,magenta,blue \"npm run dev --prefix front\" \"npm run dev --prefix auth-service\" \"npm run dev --prefix task-service\" \"npm run dev --prefix list-service\""
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
